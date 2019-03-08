@@ -1,8 +1,7 @@
 import { Message, GuildMember, Guild, TextChannel, DMChannel, GroupDMChannel, Role } from 'discord.js';
-import { TTTBoard, boardEnums } from '@bot/libraries/games/tictactoe/ttt-board';
-import { LobbyManager } from '@bot/libraries/games/lobby-manager';
+import { TTTBoard, boardEnums } from '@bot/libraries/tictactoe/ttt-board';
+import { TTTLobbyManager } from '@bot/libraries/tictactoe/ttt-lobby-manager';
 import { Logger } from '@core/bot/logger';
-import { Lobby } from '@bot/libraries/games/lobby';
 const CenterX = 1;
 const CenterY = 1;
 
@@ -21,8 +20,10 @@ module tttEnums {
     }
 }
 
-export class TTTLobby extends Lobby {
+export class TTTLobby {
     private currentTurn : tttEnums.TurnEnum;
+    private player1 : GuildMember | null;
+    private player2 : GuildMember | null;
 
     private board : TTTBoard;
     private player1Space : boardEnums.SpaceEnum;
@@ -31,12 +32,18 @@ export class TTTLobby extends Lobby {
     private boardMessage : Message | null;
     private turnMessage : Message | null;
 
+    private lobbyChannel : TextChannel | DMChannel | GroupDMChannel;
+    private lobbyServer : Guild;
+
+    private lobbyManager : TTTLobbyManager;
+
     private rowString : string;
     private colString : string;
 
-    constructor (server: Guild, channel: TextChannel | DMChannel | GroupDMChannel, manager: LobbyManager, player1: GuildMember | null = null, player2: GuildMember | null = null){
-        super(server, channel, manager, "Tic-Tac-Toe", player1, player2);
+    constructor (server: Guild, channel: TextChannel | DMChannel | GroupDMChannel, manager: TTTLobbyManager, player1: GuildMember | null = null, player2: GuildMember | null = null){
         this.currentTurn = tttEnums.TurnEnum.Searching;
+        this.player1 = player1;
+        this.player2 = player2;
 
         this.board = new TTTBoard();
         this.player1Space = boardEnums.SpaceEnum.X;
@@ -44,6 +51,11 @@ export class TTTLobby extends Lobby {
 
         this.boardMessage = null;
         this.turnMessage = null;
+
+        this.lobbyChannel = channel;
+        this.lobbyServer = server;
+
+        this.lobbyManager = manager;
 
         this.rowString = `${tttEnums.rowColumnEnum[tttEnums.rowColumnEnum.A]}`
                   + `${tttEnums.rowColumnEnum[tttEnums.rowColumnEnum.B]}`
