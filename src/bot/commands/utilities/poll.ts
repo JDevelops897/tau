@@ -17,8 +17,15 @@ export class Poll extends Command {
                     required: true,
                 },
                 {
+                    name: 'displayTime',
+                    description: 'The amount of time in seconds to display the poll, (5-300)',
+                    required: false,
+                    // expand: true,
+                    constraint: 'number'
+                },
+                {
                     name: 'choices',
-                    description: 'A list of choices separated by commas.',
+                    description: 'A list of choices separated by commas. (2-6)',
                     required: true,
                     expand: true,
                     pattern: /(.+,)+.+/
@@ -32,7 +39,10 @@ export class Poll extends Command {
         let prompt = input.getArgument('question') as string;
         prompt = prompt.replace(/"(.+)"/, '$1');
         let optionString = (input.getArgument('choices') as string);
-        let options = optionString.split(',', 6);
+        let options = optionString.split(/[,;]/, 6);
+        let displayTime = (input.getArgument('displayTime') as number) || 20;
+
+        displayTime = _.clamp(displayTime, 5, 300);
 
         if (options.length < 2) {
             await input.channel.send(`${Emoji.ERROR} There must be more that one option to create a poll`);
@@ -56,7 +66,7 @@ export class Poll extends Command {
             return;
         }
 
-        let poll = new UserPoll(input.channel as TextChannel, title, prompt, options, 3);
+        let poll = new UserPoll(input.channel as TextChannel, title, prompt, options, displayTime);
         await poll.createPoll();
     }
 }
